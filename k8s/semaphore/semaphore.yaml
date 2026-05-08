@@ -1,0 +1,143 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: semaphore
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: semaphore-data
+  namespace: semaphore
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: semaphore
+  namespace: semaphore
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: semaphore
+
+  template:
+    metadata:
+      labels:
+        app: semaphore
+
+    spec:
+      enableServiceLinks: false
+
+      containers:
+        - name: semaphore
+          image: semaphoreui/semaphore:v2.13.10
+
+          ports:
+            - containerPort: 3000
+
+          env:
+            - name: SEMAPHORE_DB_DIALECT
+              value: bolt
+
+            - name: SEMAPHORE_DB_PATH
+              value: /var/lib/semaphore/semaphore.db
+
+            - name: SEMAPHORE_PLAYBOOK_PATH
+              value: /tmp/semaphore
+
+            - name: SEMAPHORE_ADMIN
+              value: admin
+
+            - name: SEMAPHORE_ADMIN_PASSWORD
+              value: changeme
+
+            - name: SEMAPHORE_ADMIN_NAME
+              value: Admin
+
+            - name: SEMAPHORE_ADMIN_EMAIL
+              value: admin@localhost
+
+            - name: SEMAPHORE_ACCESS_KEY_ENCRYPTION
+              value: changeme123456789012345678901234
+
+            - name: SEMAPHORE_COOKIE_HASH
+              value: changeme123456789012345678901234
+
+            - name: SEMAPHORE_COOKIE_ENCRYPTION
+              value: changeme123456789012345678901234
+
+          volumeMounts:
+            - name: semaphore-data
+              mountPath: /var/lib/semaphore
+
+      volumes:
+        - name: semaphore-data
+          persistentVolumeClaim:
+            claimName: semaphore-data
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: semaphore
+  namespace: semaphore
+spec:
+  selector:
+    app: semaphore
+
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: semaphore
+  namespace: semaphore
+
+  annotations:
+    kubernetes.io/ingress.class: traefik
+
+spec:
+  ingressClassName: traefik
+
+  rules:
+    - host: semaphore.arpa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: semaphore
+                port:
+                  number: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: semaphore-lb
+  namespace: semaphore
+spec:
+  type: LoadBalancer
+
+  selector:
+    app: semaphore
+
+  ports:
+    - name: http
+      port: 3030
+      targetPort: 3000

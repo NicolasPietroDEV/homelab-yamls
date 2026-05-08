@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: syncthing
+  namespace: syncthing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: syncthing
+  template:
+    metadata:
+      labels:
+        app: syncthing
+    spec:
+      containers:
+      - name: syncthing
+        image: syncthing/syncthing:latest
+        ports:
+        - containerPort: 8384
+          name: web-ui
+        - containerPort: 22000
+          name: sync-tcp
+        - containerPort: 22000
+          name: sync-udp
+          protocol: UDP
+        - containerPort: 21027
+          name: discovery
+          protocol: UDP
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        volumeMounts:
+        - name: config
+          mountPath: /var/syncthing/config
+        - name: data
+          mountPath: /var/syncthing/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: config
+        hostPath:
+          path: /opt/syncthing/config
+          type: DirectoryOrCreate
+
+      - name: data
+        persistentVolumeClaim:
+          claimName: syncthing-data
