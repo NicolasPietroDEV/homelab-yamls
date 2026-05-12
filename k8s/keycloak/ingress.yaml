@@ -11,6 +11,20 @@ spec:
     - host: keycloak.arpa
       http:
         paths:
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 9000
+          - path: /metrics
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 9000
           - path: /
             pathType: Prefix
             backend:
