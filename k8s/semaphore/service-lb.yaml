@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: semaphore-lb
+  namespace: semaphore
+spec:
+  type: LoadBalancer
+
+  selector:
+    app: semaphore
+
+  ports:
+    - name: http
+      port: 3030
+      targetPort: 3000

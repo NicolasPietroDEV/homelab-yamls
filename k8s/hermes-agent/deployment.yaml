@@ -1,33 +1,3 @@
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: hermes
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: hermes-secrets
-  namespace: hermes
-type: Opaque
-stringData:
-  # Substitua pela sua chave do Google AI Studio
-  GOOGLE_API_KEY: ""
-  # Chave para você se autenticar na API do Agente (invente uma senha forte)
-  API_SERVER_KEY: ""
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: hermes-data
-  namespace: hermes
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi # O suficiente para logs, memória e skills
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -82,17 +52,3 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: hermes-data
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: hermes-service
-  namespace: hermes
-spec:
-  selector:
-    app: hermes-agent
-  ports:
-    - protocol: TCP
-      port: 8642
-      targetPort: 8642
-  type: ClusterIP # Use NodePort ou LoadBalancer se quiser acesso externo direto
